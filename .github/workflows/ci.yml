@@ -76,10 +76,9 @@ jobs:
 
   create_deb_packet:
     needs: reset-run-number
-    if: github.ref == 'refs/heads/master'
+    #if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-20.04
     env:
-      VERSION: "7.1.0"
       RUN_NUMBER: ${{ needs.reset-run-number.outputs.run-number }}
     permissions: write-all
     steps:
@@ -99,21 +98,14 @@ jobs:
       - name: copy file for build deb packet dev
         run: cp -r ${{ github.workspace }}/debian ${{ github.workspace }}/build
       - name: add change log
-        run: cd ${{ github.workspace }}/build/debian && export NAME_VERSION="cligen (${{env.VERSION}}-${{env.RUN_NUMBER}})" && git --no-pager log --no-walk --encoding=utf-8 --expand-tabs=4 --pretty=format:"${NAME_VERSION} stable; urgency=medium%n%n  * %w(,,2)%B%w()%n -- %an <%ae>  %aD%n" > changelog && cat changelog
+        run: cd ${{ github.workspace }}/build/debian && export NAME_VERSION="cligen (${{ steps.ghd.outputs.describe }})" && git --no-pager log --no-walk --encoding=utf-8 --expand-tabs=4 --pretty=format:"${NAME_VERSION} stable; urgency=medium%n%n  * %w(,,2)%B%w()%n -- %an <%ae>  %aD%n" > changelog && cat changelog
       - name: run build packet lib and dev
         run: cd ${{ github.workspace }}/build && dpkg-buildpackage -us -uc
       - name: show directory
         run: ls -l ${{ github.workspace }}
-      - name: Create deb packet
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{env.VERSION}}_${{env.RUN_NUMBER}}
-          release_name: cligen_${{env.VERSION}}-${{env.RUN_NUMBER}}
-          draft: false
-          prerelease: false
+      - name: Git describe
+        id: ghd
+        uses: proudust/gh-describe@v2
       - name: Upload Release Asset (cligen-dev)
         id: upload-release-asset-dev
         uses: actions/upload-release-asset@v1
@@ -121,8 +113,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/libcligen-dev_${{env.VERSION}}-${{env.RUN_NUMBER}}_amd64.deb
-          asset_name: libcligen-dev_${{env.VERSION}}-${{env.RUN_NUMBER}}_amd64.deb
+          asset_path: ${{ github.workspace }}/libcligen-dev-${{ steps.ghd.outputs.describe }}_amd64.deb
+          asset_name: libcligen-dev-${{ steps.ghd.outputs.describe }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload Release Asset (cligen)
         id: upload-release-asset
@@ -131,6 +123,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/libcligen_${{env.VERSION}}-${{env.RUN_NUMBER}}_amd64.deb
-          asset_name: libcligen_${{env.VERSION}}-${{env.RUN_NUMBER}}_amd64.deb
+          asset_path: ${{ github.workspace }}/libcligen-${{ steps.ghd.outputs.describe }}_amd64.deb
+          asset_name: libcligen-${{ steps.ghd.outputs.describe }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
