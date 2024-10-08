@@ -105,7 +105,7 @@ jobs:
       - name: Upload artefact
         uses: actions/upload-artifact@v4
         with:
-          name: libcligen-dev_${{env.VERSION}}-${{env.steps.ghd.outputs.distance}}_amd64.deb
+          name: libcligen-dev_${{env.VERSION}}-${{steps.ghd.outputs.distance}}_amd64.deb
           path: ${{ github.workspace }}/libcligen-dev_${{env.VERSION}}-${{steps.ghd.outputs.distance}}_amd64.deb
       - name: Upload artefact (cligen)
         uses: actions/upload-artifact@v4
